@@ -8,8 +8,7 @@ This project provides a Model Context Protocol (MCP) server that enables AI agen
 ## Documentation
 
 - **[Product Requirements Document (PRD)](PRD.md)** - Project goals, requirements, and specifications
-- **[Architecture Document](ARCHITECTURE.md)** - System design and component overview  
-- **[Database Schema](SCHEMA.md)** - Detailed database schema documentation
+- **[Architecture Document](ARCHITECTURE.md)** - System design, component overview, and detailed database schema
 
 ## Key Features
 
@@ -26,7 +25,7 @@ The system consists of:
 - **Sync Job**: Daily Cloud Run Job to update pricing data from Google's API
 - **Database**: Turso (libSQL) for fast, reliable data storage
 
-For detailed architecture information, see [ARCHITECTURE.md](ARCHITECTURE.md).
+For detailed architecture information including complete database schema documentation, see [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## Database Schema
 
@@ -36,4 +35,4 @@ The system uses a normalized schema optimized for search and calculation operati
 - `pricing_info` - Time-based pricing records
 - `pricing_tiers` - Detailed tiered pricing rates
 
-For complete schema documentation, see [SCHEMA.md](SCHEMA.md).
+For complete schema documentation, see the Data Model section in [ARCHITECTURE.md](ARCHITECTURE.md).
