@@ -1,5 +1,8 @@
 # Architecture Design Document
 
+**Project:** MCP Server for Google Cloud Pricing Access
+**Stack:** Go language, GCP Cloud Run (service + Job), Turso (libSQL), GitHub OAuth 2.1, GCP Cloud Billing Catalog API, MCP Go SDK
+
 ## 1. Overview
 The goal of this project is to build a Model Context Protocol (MCP) server that enables AI agents to access Google Cloud's publicly available pricing information through standardized tool interfaces: search, details, and calculate. These AI-native tools will facilitate discovery, metadata retrieval, and cost estimation. Pricing data will be synchronized from the Cloud Billing Catalog API into a Turso (libSQL) database on a daily schedule to ensure low-latency access, all underpinned by secure authentication using GitHub's OAuth 2.1 flow with PKCE, following the MCP authorization specification.
 
@@ -26,7 +29,53 @@ The database schema in Turso reflects the structure of pricing data exposed by t
 
 The skus table includes a category_json field that stores the entire category object (resourceFamily, resourceGroup, usageType, serviceDisplayName) for each SKU. This approach simplifies initial development while preserving flexibility. Additional columns (resource_family, resource_group, usage_type) can be added later if filtering becomes necessary.
 
-The model also tracks pricing history: each pricing_info record captures a timestamp and summary, with child tables storing pricing expressions and tiered rates, precisely mirroring the nested structure of the API. The architecture omits currency conversion overhead by limiting prices to USD only, using the API’s units+nanos representation to avoid float inaccuracies.
+The model also tracks pricing history. To simplify the schema, each `pricing_info` record captures a timestamp, summary, and the full pricing expression. Tiered rates are stored as a JSON array within the same record, which closely mirrors the nested structure of the API response. The architecture omits currency conversion overhead by limiting prices to USD only, using the API’s units+nanos representation to avoid float inaccuracies.
+
+Below is a sketch of the proposed database schema:
+
+**`services`**
+
+| Column | Type | Description |
+| --- | --- | --- |
+| service_id | TEXT | Primary Key, from Catalog API |
+| display_name | TEXT | Human-readable name of the service |
+| business_entity_name | TEXT | The business entity providing the service |
+
+**`skus`**
+
+| Column | Type | Description |
+| --- | --- | --- |
+| sku_id | TEXT | Primary Key, from Catalog API |
+| service_id | TEXT | Foreign Key to `services` table |
+| description | TEXT | Description of the SKU |
+| category_json | JSON | Full category object from API |
+| service_regions | JSON | List of regions where SKU is available |
+| geo_taxonomy | JSON | Geographic taxonomy information |
+
+**`pricing_info`**
+
+| Column | Type | Description |
+| --- | --- | --- |
+| pricing_info_id | INTEGER | Primary Key, auto-incrementing |
+| sku_id | TEXT | Foreign Key to `skus` table |
+| effective_time | TIMESTAMP | When this pricing became effective |
+| summary | TEXT | A summary of the pricing |
+| currency_code | TEXT | Currency of the price (e.g., "USD") |
+| usage_unit | TEXT | The unit of usage (e.g., "GIBI.H") |
+| usage_unit_description| TEXT | Description of the usage unit |
+| display_quantity | INTEGER | The quantity the price is for |
+| tiered_rates | JSON | JSON array of tiered rate objects. Each object contains `start_usage_amount`, `units`, and `nanos`. |
+
+**`pricing_updates`**
+
+| Column | Type | Description |
+| --- | --- | --- |
+| update_id | INTEGER | Primary Key, auto-incrementing |
+| update_time | TIMESTAMP | Timestamp of the sync job run |
+| status | TEXT | 'SUCCESS' or 'FAILURE' |
+| services_updated | INTEGER | Number of services updated |
+| skus_updated | INTEGER | Number of SKUs updated |
+| log_message | TEXT | Log message from the sync job |
 
 ## 5. Authentication and Security
 Authentication is handled via GitHub using OAuth 2.1 with PKCE. This ensures secure sign-in for both public and confidential clients per MCP specifications. The server will offer OAuth metadata endpoints so MCP-compliant clients can discover necessary auth info dynamically, as required by the compliance draft.
