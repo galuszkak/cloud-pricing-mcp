@@ -27,7 +27,7 @@ To retrieve pricing data programmatically, the architecture uses Google’s Clou
 ## 4. Data Model in Turso
 The database schema in Turso reflects the structure of pricing data exposed by the Catalog API. We will use the natural identifiers provided by the API—service_id for services and sku_id for SKUs—as primary keys. This eliminates the need for synthetic surrogate keys and simplifies synchronization logic.
 
-The skus table includes a category_json field that stores the entire category object (resourceFamily, resourceGroup, usageType, serviceDisplayName) for each SKU. This approach simplifies initial development while preserving flexibility. Additional columns (resource_family, resource_group, usage_type) can be added later if filtering becomes necessary.
+The skus table includes a category field that stores the entire category object (resourceFamily, resourceGroup, usageType, serviceDisplayName) for each SKU as a JSONB blob. This approach simplifies initial development while preserving flexibility and allowing for efficient queries into the JSON structure if needed.
 
 The model also tracks pricing history. To simplify the schema, each `pricing_info` record captures a timestamp, summary, and the full pricing expression. Tiered rates are stored as a JSON array within the same record, which closely mirrors the nested structure of the API response. The architecture omits currency conversion overhead by limiting prices to USD only, using the API’s units+nanos representation to avoid float inaccuracies.
 
@@ -48,9 +48,9 @@ Below is a sketch of the proposed database schema:
 | sku_id | TEXT | Primary Key, from Catalog API |
 | service_id | TEXT | Foreign Key to `services` table |
 | description | TEXT | Description of the SKU |
-| category_json | JSON | Full category object from API |
-| service_regions | JSON | List of regions where SKU is available |
-| geo_taxonomy | JSON | Geographic taxonomy information |
+| category | BLOB | Full category object from API (JSONB) |
+| service_regions | BLOB | List of regions where SKU is available (JSONB) |
+| geo_taxonomy | BLOB | Geographic taxonomy information (JSONB) |
 
 **`pricing_info`**
 
@@ -64,7 +64,7 @@ Below is a sketch of the proposed database schema:
 | usage_unit | TEXT | The unit of usage (e.g., "GIBI.H") |
 | usage_unit_description| TEXT | Description of the usage unit |
 | display_quantity | INTEGER | The quantity the price is for |
-| tiered_rates | JSON | JSON array of tiered rate objects. Each object contains `start_usage_amount`, `units`, and `nanos`. |
+| tiered_rates | BLOB | JSON array of tiered rate objects (JSONB). Each object contains `start_usage_amount`, `units`, and `nanos`. |
 
 **`pricing_updates`**
 
