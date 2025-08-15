@@ -7,6 +7,7 @@ tasks:
       - mkdir -p build
       - go build -v -o build/mcp-server ./cmd/mcp-server
       - go build -v -o build/sync-job ./cmd/sync-job
+      - go build -v -o build/migrate ./cmd/migrate
 
   test:
     desc: "Run all tests"
