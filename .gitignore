@@ -34,3 +34,6 @@ go.work.sum
 # Local binaries and build artifacts
 bin/
 build/
+migrator
+mcp-server
+sync-job
