@@ -25,7 +25,8 @@ CREATE TABLE IF NOT EXISTS pricing_info (
     usage_unit_description TEXT,
     display_quantity INTEGER,
     tiered_rates BLOB NOT NULL,
-    FOREIGN KEY (sku_id) REFERENCES skus(sku_id)
+    FOREIGN KEY (sku_id) REFERENCES skus(sku_id),
+    UNIQUE (sku_id, effective_time)
 );
 
 CREATE TABLE IF NOT EXISTS pricing_updates (
