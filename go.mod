@@ -1,6 +1,6 @@
 module mcp-server
 
-go 1.24.3
+go 1.24.5
 
 require (
 	cloud.google.com/go/billing v1.20.4
